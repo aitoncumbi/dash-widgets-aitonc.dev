@@ -1,0 +1,6 @@
+{
+    "name": "Gnome Dash Widgets",
+    "description": "Dynamic widgets on the Gnome Desktop Dash",
+    "uuid": "dash-widgets@aitonc.dev",
+    "shell-version": ["45", "46", "47", "48", "49"]
+}
