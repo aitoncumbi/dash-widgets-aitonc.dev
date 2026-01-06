@@ -1,34 +1,7 @@
+import GdkPixbuf from "gi://GdkPixbuf";
 import Gio from "gi://Gio";
 import Shell from "gi://Shell";
 import St from "gi://St";
-import GdkPixbuf from "gi://GdkPixbuf";
-import GLib from "gi://GLib";
-
-const mprisInterface = `
-<node>
-	<interface name="org.mpris.MediaPlayer2.Player">
-		<method name="Play" />
-		<method name="PlayPause" />
-		<method name="Next" />
-		<method name="Previous" />
-		<method name="Stop" />
-		<property name="CanPlay" type="b" access="read" />
-		<property name="CanPause" type="b" access="read" />
-		<property name="CanGoNext" type="b" access="read" />
-		<property name="CanGoPrevious" type="b" access="read" />
-		<property name="Metadata" type="a{sv}" access="read"/>
-		<property name="PlaybackStatus" type="s" access="read"/>
-	</interface>
-
-</node>`;
-
-const entryInterface = `
-<node>
-	<interface name="org.mpris.MediaPlayer2">
-		<property name="DesktopEntry" type="s" access="read"/>
-		<property name="Identity" type="s" access="read"/>
-	</interface>
-</node>`;
 
 const dBusInterface = `
 <node>
@@ -44,19 +17,112 @@ const dBusInterface = `
 	</interface>
 </node>`;
 
-export var Players = class Players {
+const mprisInterface = `
+<node>
+	<interface name="org.mpris.MediaPlayer2.Player">
+		<method name="Play"/>
+		<method name="PlayPause"/>
+		<method name="Next"/>
+		<method name="Previous"/>
+		<method name="Stop"/>
+		<property name="CanPlay" type="b" access="read"/>
+		<property name="CanPause" type="b" access="read"/>
+		<property name="CanGoNext" type="b" access="read"/>
+		<property name="CanGoPrevious" type="b" access="read"/>
+		<property name="Metadata" type="a{sv}" access="read"/>
+		<property name="PlaybackStatus" type="s" access="read"/>
+	</interface>
+</node>`;
+
+const entryInterface = `
+<node>
+	<interface name="org.mpris.MediaPlayer2">
+		<property name="DesktopEntry" type="s" access="read"/>
+		<property name="Identity" type="s" access="read"/>
+	</interface>
+</node>`;
+
+export class Players {
   constructor() {
     this.list = [];
     this.activePlayers = [];
+
     const dBusProxyWrapper = Gio.DBusProxy.makeProxyWrapper(dBusInterface);
+
     this.dBusProxy = dBusProxyWrapper(
       Gio.DBus.session,
       "org.freedesktop.DBus",
       "/org/freedesktop/DBus",
       this._initList.bind(this)
     );
-    // this.settings = settings;
   }
+
+  _initList() {
+    const dBusList = this.dBusProxy.ListNamesSync()[0].filter((element) => element.startsWith("org.mpris.MediaPlayer2"));
+
+    this.unfilteredList = [];
+
+    dBusList.forEach((address) =>
+      this.unfilteredList.push(new Player(address))
+    );
+
+    this.dBusProxy.connectSignal("NameOwnerChanged", this._updateList.bind(this));
+  }
+
+  _updateList(proxy, sender, [name, oldOwner, newOwner]) {
+    if (name.startsWith("org.mpris.MediaPlayer2")) {
+      if (newOwner && !oldOwner) {
+        //add player
+        let player = new Player(name);
+        this.unfilteredList.push(player);
+      } else if (!newOwner && oldOwner) {
+        //delete player
+        this.unfilteredList = this.unfilteredList.filter(
+          (player) => player.address != name
+        );
+      }
+    }
+  }
+
+  updateFilterList() {
+    if (!this.unfilteredList) return;
+
+    const SOURCES_BLACKLIST = "";
+    const SOURCES_WHITELIST = "";
+    let USE_WHITELIST = false;
+
+    if (!SOURCES_BLACKLIST || !SOURCES_WHITELIST)
+      this.list = this.unfilteredList;
+
+    const blacklist = SOURCES_BLACKLIST.toLowerCase()
+      .replaceAll(" ", "")
+      .split(",");
+    const whitelist = SOURCES_WHITELIST.toLowerCase()
+      .replaceAll(" ", "")
+      .split(",");
+
+    if (USE_WHITELIST && SOURCES_WHITELIST)
+      this.list = this.unfilteredList.filter((element) =>
+        whitelist.includes(element.identity.toLowerCase().replaceAll(" ", ""))
+      );
+
+    if (!USE_WHITELIST && SOURCES_BLACKLIST)
+      this.list = this.unfilteredList.filter(
+        (element) =>
+          !blacklist.includes(
+            element.identity.toLowerCase().replaceAll(" ", "")
+          )
+      );
+  }
+
+  updateActiveList() {
+    let actives = [];
+    this.list.forEach((player) => {
+      if (player.playbackStatus == "Playing") actives.push(player);
+    });
+    this.activePlayers = actives;
+  }
+
   pick() {
     const AUTO_SWITCH_TO_MOST_RECENT = true;
 
@@ -89,6 +155,7 @@ export var Players = class Players {
     this.selected = bestChoice;
     return this.selected;
   }
+
   next() {
     const AUTO_SWITCH_TO_MOST_RECENT = true;
 
@@ -109,72 +176,6 @@ export var Players = class Players {
     }
 
     return this.selected;
-  }
-  _initList() {
-    let dBusList = this.dBusProxy.ListNamesSync()[0];
-    dBusList = dBusList.filter((element) =>
-      element.startsWith("org.mpris.MediaPlayer2")
-    );
-    this.unfilteredList = [];
-    dBusList.forEach((address) =>
-      this.unfilteredList.push(new Player(address))
-    );
-
-    this.dBusProxy.connectSignal(
-      "NameOwnerChanged",
-      this._updateList.bind(this)
-    );
-  }
-  _updateList(proxy, sender, [name, oldOwner, newOwner]) {
-    if (name.startsWith("org.mpris.MediaPlayer2")) {
-      if (newOwner && !oldOwner) {
-        //add player
-        let player = new Player(name);
-        this.unfilteredList.push(player);
-      } else if (!newOwner && oldOwner) {
-        //delete player
-        this.unfilteredList = this.unfilteredList.filter(
-          (player) => player.address != name
-        );
-      }
-    }
-  }
-  updateFilterList() {
-    if (!this.unfilteredList) return;
-
-    const SOURCES_BLACKLIST = "";
-    const SOURCES_WHITELIST = "";
-    let USE_WHITELIST = false;
-
-    if (!SOURCES_BLACKLIST || !SOURCES_WHITELIST)
-      this.list = this.unfilteredList;
-
-    const blacklist = SOURCES_BLACKLIST.toLowerCase()
-      .replaceAll(" ", "")
-      .split(",");
-    const whitelist = SOURCES_WHITELIST.toLowerCase()
-      .replaceAll(" ", "")
-      .split(",");
-
-    if (USE_WHITELIST && SOURCES_WHITELIST)
-      this.list = this.unfilteredList.filter((element) =>
-        whitelist.includes(element.identity.toLowerCase().replaceAll(" ", ""))
-      );
-
-    if (!USE_WHITELIST && SOURCES_BLACKLIST)
-      this.list = this.unfilteredList.filter(
-        (element) =>
-          !blacklist.includes(
-            element.identity.toLowerCase().replaceAll(" ", "")
-          )
-      );
-  }
-  updateActiveList() {
-    let actives = [];
-    this.list.forEach((player) => {
-      if (player.playbackStatus == "Playing") actives.push(player);
-    });
-    this.activePlayers = actives;
   }
 };
 
@@ -201,6 +202,7 @@ class Player {
       this._onEntryProxyReady.bind(this)
     );
   }
+
   _onEntryProxyReady() {
     this.identity = this.entryProxy.Identity;
     this.desktopEntry = this.entryProxy.DesktopEntry;
@@ -231,6 +233,7 @@ class Player {
 
     this.icon = this.getIcon();
   }
+
   _matchRunningApps(matchedEntries) {
     const activeApps = Shell.AppSystem.get_default().get_running();
 
@@ -243,6 +246,7 @@ class Player {
 
     return matchedEntries[0];
   }
+
   update() {
     this.metadata = this.proxy.Metadata;
 
@@ -253,6 +257,7 @@ class Player {
       this.statusTimestamp = new Date().getTime();
     }
   }
+
   stringFromMetadata(field) {
     // metadata is a javascript object
     // each "field" correspond to a string-keyed property on metadata
@@ -265,6 +270,7 @@ class Player {
     }
     return "";
   }
+
   getArtUrlIcon(size) {
     const url = this.stringFromMetadata("mpris:artUrl", this.metadata);
 
@@ -279,6 +285,7 @@ class Player {
 
     return this.albumArt;
   }
+
   getIcon() {
     let icon = new St.Icon({
       style_class: "system-status-icon",
@@ -292,6 +299,7 @@ class Player {
     icon.set_gicon(gioIcon);
     return icon;
   }
+
   toggleStatus() {
     if (this.proxy.CanPlay && this.proxy.CanPause) {
       this.proxy.PlayPauseRemote();
@@ -308,12 +316,15 @@ class Player {
       return;
     }
   }
+
   goNext() {
     if (this.proxy.CanGoNext) this.proxy.NextRemote();
   }
+
   goPrevious() {
     if (this.proxy.CanGoPrevious) this.proxy.PreviousRemote();
   }
+
   activatePlayer() {
     let focusedWindow = global.display.get_focus_window();
     let playerWindow = this._matchAppWindow();
@@ -339,6 +350,7 @@ class Player {
       }
     }
   }
+
   _matchAppWindow() {
     //match player with window
     let app = Shell.AppSystem.get_default().lookup_app(this.desktopApp);
@@ -356,6 +368,7 @@ class Player {
       if (appPID.includes(windowPID)) return window;
     }
   }
+
   getAlbumArtDominantColor() {
     if (!this.albumArt) return null;
 

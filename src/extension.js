@@ -1,70 +1,45 @@
-import GLib from "gi://GLib";
-import GObject from "gi://GObject";
 import St from "gi://St";
-
-import { Extension } from "resource:///org/gnome/shell/extensions/extension.js";
 
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
 
-import { MusicWidget } from "./widgets/musicPlayer/widget.js";
-import { Players } from "./widgets/musicPlayer/player.js";
+import { Extension } from "resource:///org/gnome/shell/extensions/extension.js";
 
-const DashContainer = GObject.registerClass(
-class DashContainer extends St.BoxLayout {
-  _init(players) {
-    super._init({
+import { MusicWidget } from "./widgets/musicPlayer/widget.js";
+
+export default class DashWidgetsExtension extends Extension {
+  enable() {
+    this._widgets = [
+      new MusicWidget()
+    ];
+
+    // TODO: hide dash container when no visible widgets
+    // TODO: update when monitors change
+    // TODO: Rounded cover image
+    this._dashContainer = new St.BoxLayout({
       style_class: "dash-widget-container",
       vertical: true,
+      y_align: Clutter.ActorAlign.CENTER,
       x_expand: true,
       y_expand: true
     });
 
-    this._musicWidget = new MusicWidget(players);
-
-    this.add_child(this._musicWidget);
-  }
-
-  update(player) {
-    this._musicWidget.update(player);
-  }
-});
-
-export default class DashWidgetsExtension extends Extension {
-  enable() {
-    this._players = new Players();
-    this._dashContainer = new DashContainer(this._players);
+    this._widgets.forEach(widget => {
+      this._dashContainer.add_child(widget);
+    });
 
     Main.overview.dash._box.add_child(this._dashContainer);
-
-    this._updateTimer = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 1000, () => {
-      this._players.updateFilterList();
-      this._players.updateActiveList();
-
-      this._currentPlayer = this._players.pick();
-
-      if (!this._currentPlayer || this._currentPlayer.playbackStatus === 'Stopped') {
-        this._dashContainer.hide();
-      } else {
-        this._dashContainer.show();
-        this._dashContainer.update(this._currentPlayer);
-      }
-
-      return GLib.SOURCE_CONTINUE;
-    });
   }
 
   disable() {
+    this._widgets.forEach(widget => {
+      widget.destroy();
+    });
+
     if (this._dashContainer) {
       this._dashContainer.destroy();
     }
 
-    if (this._updateTimer) {
-      GLib.source_remove(this._updateTimer);
-    }
-
-    this._players = null;
+    this._widgets = null;
     this._dashContainer = null;
-    this._updateTimer = null;
-    this._currentPlayer = null;
   }
 }
