@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <requires lib="gtk" version="4.0"/>
+  <requires lib="adwaita" version="1.0"/>
+
+  <object class="AdwPreferencesPage" id="media-player-page">
+    <property name="title" translatable="yes">Media Player</property>
+    <property name="icon-name">media-seek-forward-symbolic</property>
+
+    <child>
+      <object class="AdwPreferencesGroup">
+        <property name="title" translatable="yes">Appearance</property>
+
+        <child>
+          <object class="AdwPreferencesGroup">
+            <child>
+              <object class="AdwSwitchRow" id="media-player-dynamic-color">
+                <property name="title" translatable="yes">Dynamic Color</property>
+                <property name="subtitle" translatable="yes">Tint the widget to match the album cover image</property>
+              </object>
+            </child>
+          </object>
+        </child>
+
+      </object>
+    </child>
+
+  </object>
+
+</interface>

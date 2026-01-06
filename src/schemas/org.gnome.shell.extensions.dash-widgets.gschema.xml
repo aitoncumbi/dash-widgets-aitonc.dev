@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.dash-widgets" path="/org/gnome/shell/extensions/dash-widgets/">
+
+    <key name="media-player-dynamic-color" type="b">
+      <default>true</default>
+    </key>
+
+  </schema>
+</schemalist>

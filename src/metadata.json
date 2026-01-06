@@ -1,8 +1,6 @@
 {
-  "description": "Simple widgets integrated to dash",
-  "gettext-domain": "dash-widgets@aitonc.dev",
-  "license": "GPL-3.0-or-later",
-  "name": "Gnome Dash Widgets",
+  "description": "Customizable widgets for the dash",
+  "name": "Dash Widgets",
   "settings-schema": "org.gnome.shell.extensions.dash-widgets",
   "shell-version": [
     "45",
@@ -13,6 +11,5 @@
   ],
   "url": "https://github.com/aitoncumbi/dash-widgets-aitonc.dev",
   "uuid": "dash-widgets@aitonc.dev",
-  "version": 1.0,
-  "version-name": "1.0 beta"
+  "version": 1
 }
