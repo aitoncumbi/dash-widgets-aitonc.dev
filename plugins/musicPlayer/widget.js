@@ -1,15 +1,18 @@
 import GObject from "gi://GObject";
 import St from "gi://St";
 import Clutter from "gi://Clutter";
+import GLib from "gi://GLib";
+import { Players } from "./helpers/player.js";
 
-export const MusicWidget = GObject.registerClass(
+export default GObject.registerClass(
   class MusicWidget extends St.BoxLayout {
-    _init(players) {
+    _init() {
       super._init({
         style_class: "music-player-widget",
         vertical: false,
         x_expand: false,
         y_expand: true,
+        visible: false,
       });
 
       this._musicMetadata = new St.BoxLayout({
@@ -104,11 +107,36 @@ export const MusicWidget = GObject.registerClass(
         }
       });
 
-      this.update(players.pick());
-
       this.add_child(this._musicAlbumArt);
       this.add_child(this._musicMetadata);
       this.add_child(this._musicControls);
+    }
+
+    enable() {
+        this.players = new Players();
+        this.timer = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 1000, () => {
+            this.players.updateFilterList();
+            this.players.updateActiveList();
+
+            const currentPlayer = this.players.pick();
+
+            if (!currentPlayer || currentPlayer.playbackStatus == 'Stopped') {
+              this.hide();
+            } else {
+              this.show();
+              this.update(currentPlayer);
+            }
+
+            return GLib.SOURCE_CONTINUE;
+        });
+    }
+
+    disable() {
+        if (this.timer) {
+            GLib.source_remove(this.timer);
+            this.timer = null;
+        }
+        this.players = null;
     }
 
     update(player) {
@@ -126,10 +154,12 @@ export const MusicWidget = GObject.registerClass(
       const artist =
         player.stringFromMetadata("xesam:artist") || "Unknown Artist";
 
-      const artUrl = player.getArtUrlIcon(28); // move this to settings on the future (current album art size 28px)
+      const artUrl = player.getArtUrlIcon(28);
 
       let dominantColor = null;
-      artUrl.style = "padding: 0px; border-radius: 8px;";
+      if(artUrl) {
+        artUrl.style = "padding: 0px; border-radius: 8px;";
+      }
 
       if (artUrl) {
         this._musicAlbumArt.set_child(artUrl);
