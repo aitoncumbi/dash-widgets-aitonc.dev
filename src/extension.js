@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+import GLib from "gi://GLib";
+>>>>>>> 321fe3f (Cleanup style.css)
 import GObject from "gi://GObject";
 import St from "gi://St";
 
@@ -9,6 +13,7 @@ import { plugins as pluginList } from "./plugins.js";
 =======
 
 import { MusicWidget } from "./widgets/musicPlayer/widget.js";
+<<<<<<< HEAD
 import { Players } from "./widgets/musicPlayer/helpers/player.js";
 >>>>>>> db79ced (Cleanup project structure and preferences):src/extension.js
 
@@ -22,8 +27,29 @@ const DashContainer = GObject.registerClass(
         y_expand: true,
       });
     }
+=======
+import { Players } from "./widgets/musicPlayer/player.js";
+
+const DashContainer = GObject.registerClass(
+class DashContainer extends St.BoxLayout {
+  _init(players) {
+    super._init({
+      style_class: "dash-widget-container",
+      vertical: true,
+      x_expand: true,
+      y_expand: true
+    });
+
+    this._musicWidget = new MusicWidget(players);
+
+    this.add_child(this._musicWidget);
+>>>>>>> 321fe3f (Cleanup style.css)
   }
-);
+
+  update(player) {
+    this._musicWidget.update(player);
+  }
+});
 
 export default class DashWidgetsExtension extends Extension {
 <<<<<<< HEAD:extension.js
@@ -32,16 +58,16 @@ export default class DashWidgetsExtension extends Extension {
     this.plugins = [];
 =======
   enable() {
-    this.players = new Players();
-    this.currentPlayer = this.players.pick();
-    this.dashContainer = new DashContainer(this.players);
+    this._players = new Players();
+    this._dashContainer = new DashContainer(this._players);
 
-    Main.overview.dash._box.add_child(this.dashContainer);
+    Main.overview.dash._box.add_child(this._dashContainer);
 
-    this.timer = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 1000, () => {
-      this.players.updateFilterList();
-      this.players.updateActiveList();
+    this._updateTimer = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 1000, () => {
+      this._players.updateFilterList();
+      this._players.updateActiveList();
 
+<<<<<<< HEAD
       this.currentPlayer = this.players.pick();
 >>>>>>> db79ced (Cleanup project structure and preferences):src/extension.js
 
@@ -57,6 +83,15 @@ export default class DashWidgetsExtension extends Extension {
 
       } catch (e) {
         log(`Error loading plugin ${pluginName}: ${e}`);
+=======
+      this._currentPlayer = this._players.pick();
+
+      if (!this._currentPlayer || this._currentPlayer.playbackStatus === 'Stopped') {
+        this._dashContainer.hide();
+      } else {
+        this._dashContainer.show();
+        this._dashContainer.update(this._currentPlayer);
+>>>>>>> 321fe3f (Cleanup style.css)
       }
 <<<<<<< HEAD:extension.js
     }
@@ -70,6 +105,7 @@ export default class DashWidgetsExtension extends Extension {
   }
 
   disable() {
+<<<<<<< HEAD
     for (const plugin of this.plugins) {
       plugin.disable();
     }
@@ -78,14 +114,25 @@ export default class DashWidgetsExtension extends Extension {
     if (this.dashContainer) {
       this.dashContainer.destroy();
       this.dashContainer = null;
+=======
+    if (this._dashContainer) {
+      this._dashContainer.destroy();
+>>>>>>> 321fe3f (Cleanup style.css)
     }
 <<<<<<< HEAD:extension.js
 =======
 
-    if (this.timer) {
-      GLib.source_remove(this.timer);
-      this.timer = null;
+    if (this._updateTimer) {
+      GLib.source_remove(this._updateTimer);
     }
+<<<<<<< HEAD
 >>>>>>> db79ced (Cleanup project structure and preferences):src/extension.js
+=======
+
+    this._players = null;
+    this._dashContainer = null;
+    this._updateTimer = null;
+    this._currentPlayer = null;
+>>>>>>> 321fe3f (Cleanup style.css)
   }
 }
