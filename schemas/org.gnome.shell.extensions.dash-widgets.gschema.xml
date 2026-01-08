@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.dash-widgets" path="/org/gnome/shell/extensions/dash-widgets/">
+    <key name="enabled-plugins" type="as">
+      <default>['musicPlayer']</default>
+      <summary>Enabled Dash Widgets plugins</summary>
+      <description>
+        List of UUIDs of the Dash Widgets plugins that are currently enabled.
+      </description>
+    </key>
+  </schema>
+</schemalist>
