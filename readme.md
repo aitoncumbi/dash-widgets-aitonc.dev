@@ -18,7 +18,7 @@ One of the completed widgets is a **media player controller**, which displays an
 - 📻 Automatic update of media metadata (track title, artist, album)
 - 🔄 Switches to the most recently active MPRIS-compatible player
 - ⏭️ Skip to the next track
-- ⏸️ Play/pause functionality (currently updates the playback status icon; direct control is in development)
+- ⏸️ Play/pause functionality Implemented
 - 🎨 Widget background dynamically updates to the dominant color extracted from the album art
 - ❌ Widget automatically hides when no media players are active (e.g., when the application is closed)
 
@@ -40,8 +40,7 @@ One of the completed widgets is a **media player controller**, which displays an
 | No Active Player |
 | ![No Player](assets/Screenshot04.png) |
  Widget Controls |
-| 🛑 Not realised now 🛑 |
- <!-- ![Controls](assets/media-controls.png) | -->
+  ![Controls](assets/media-controls.png) |
 ---
 
 ## 🚀 Getting Started
@@ -66,5 +65,4 @@ cp -r . ~/.local/share/gnome-shell/extensions/dash-widgets@aitonc.dev.git
 ## 👩‍💻 Author
 Developer: [aitoncumbi](https://github.com/aitoncumbi)  
 Readme.md desing: [Miocasa](https://github.com/Miocasa)
-
 Maintainer: [supersaiyanmode](https://github.com/supersaiyanmode)
